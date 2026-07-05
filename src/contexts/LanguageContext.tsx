@@ -19,6 +19,7 @@ const ptTranslations = {
   'nav.login': 'Entrar',
   'nav.logout': 'Sair',
   'nav.admin': 'Admin',
+  'nav.menu': 'Menu',
   'nav.profile': 'Perfil',
   'nav.photos': 'Fotos',
 
@@ -581,6 +582,7 @@ const enTranslations = {
   'nav.login': 'Login',
   'nav.logout': 'Logout',
   'nav.admin': 'Admin',
+  'nav.menu': 'Menu',
   'nav.profile': 'Profile',
   'nav.photos': 'Photos',
 

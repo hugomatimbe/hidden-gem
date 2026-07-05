@@ -37,10 +37,20 @@ export default function Layout({
   const { user, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const resolvedUrl = url ? absoluteUrl(url) : `${getSiteUrl()}${router.asPath.split('?')[0].split('#')[0]}`;
   const resolvedImage = image ? absoluteUrl(image) : undefined;
+
+  // Close the mobile menu automatically on navigation — otherwise it stays
+  // open over the new page after tapping a link.
+  useEffect(() => {
+    const handleRouteChange = () => setMobileMenuOpen(false);
+    router.events.on('routeChangeComplete', handleRouteChange);
+    return () => router.events.off('routeChangeComplete', handleRouteChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -183,8 +193,53 @@ export default function Layout({
                   </a>
                 </Link>
               )}
+
+              {/* Below md, the nav links and search box above are hidden —
+                  this button + panel is the only way to reach them. */}
+              <button
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                className="md:hidden p-2 rounded-lg bg-sand-100 dark:bg-ink-700 hover:bg-sand-200 dark:hover:bg-ink-700/70 transition-colors"
+                aria-label={t('nav.menu')}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-sand-200 dark:border-ink-700 px-4 py-4 space-y-4">
+              <SearchBox className="block sm:hidden" />
+
+              <nav className="flex flex-col space-y-3">
+                <Link href="/c/maputo">
+                  <a className="text-ink/70 dark:text-sand-200 hover:text-primary dark:hover:text-primary-300 font-medium">{t('nav.explore')}</a>
+                </Link>
+                <Link href="/photos">
+                  <a className="text-ink/70 dark:text-sand-200 hover:text-primary dark:hover:text-primary-300 font-medium">{t('nav.photos')}</a>
+                </Link>
+                <Link href="/submit">
+                  <a className="text-ink/70 dark:text-sand-200 hover:text-primary dark:hover:text-primary-300 font-medium">{t('nav.add')}</a>
+                </Link>
+                <Link href="/about">
+                  <a className="text-ink/70 dark:text-sand-200 hover:text-primary dark:hover:text-primary-300 font-medium">{t('nav.about')}</a>
+                </Link>
+                {user?.isAdmin && (
+                  <Link href="/admin">
+                    <a className="text-primary hover:text-primary-600 font-medium">{t('nav.admin')}</a>
+                  </Link>
+                )}
+              </nav>
+            </div>
+          )}
         </header>
 
         <VerifyEmailBanner />

@@ -11,6 +11,22 @@ export const config = {
 
 const uploadDir = path.join(process.cwd(), 'public', 'uploads');
 
+// formidable's `keepExtensions: true` blindly reuses whatever suffix the
+// client's filename happened to have. Photos saved from some sites/apps end
+// up with browser-assigned filenames like "abc123.com" or "xyz.to" (picked
+// up from the source URL, not a real file extension) — those aren't
+// recognized image extensions, so Next's static file server won't serve them
+// with an image Content-Type and the <img> tag fails to render (showing the
+// alt text instead, as if the image were missing). To avoid this, we ignore
+// the client filename entirely and derive the extension from the detected
+// MIME type instead, which `filter` below has already confirmed is an image.
+const MIME_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -24,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const form = new IncomingForm({
       uploadDir,
-      keepExtensions: true,
+      keepExtensions: false,
       maxFileSize: 5 * 1024 * 1024, // 5MB
       filter: (part) => {
         return part.mimetype?.startsWith('image/') || false;
@@ -47,8 +63,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       fileArray.forEach((file) => {
         if (file && file.filepath) {
-          // Generate public URL for the uploaded file
-          const filename = path.basename(file.filepath);
+          // Rename the file formidable wrote (extensionless, since
+          // keepExtensions is off above) to have a real image extension
+          // based on its actual MIME type.
+          const properExt = MIME_EXTENSIONS[file.mimetype || ''] || '.jpg';
+          const finalPath = `${file.filepath}${properExt}`;
+          fs.renameSync(file.filepath, finalPath);
+
+          const filename = path.basename(finalPath);
           const publicUrl = `/uploads/${filename}`;
           imageUrls.push(publicUrl);
         }

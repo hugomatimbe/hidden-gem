@@ -171,7 +171,7 @@ const ImageUpload = ({ onImagesChange, initialImages = [], maxImages = 5 }: Imag
                 className="w-full h-24 object-cover"
                 onError={(e) => {
                   console.error('Image load error:', image);
-                  (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                  (e.target as HTMLImageElement).src = '/images/placeholder.svg';
                 }}
               />
               <button
