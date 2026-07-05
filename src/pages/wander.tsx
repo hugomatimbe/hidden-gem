@@ -17,21 +17,24 @@ export default function WanderPage({ gems }: WanderProps) {
   const [seenGems, setSeenGems] = useState<number[]>([]);
 
   const handleNextGem = () => {
-    setSeenGems(prev => [...prev, currentGemIndex]);
-    
-    // Find next unseen gem
-    let nextIndex;
-    const unseenIndices = gems.map((_, index) => index).filter(i => !seenGems.includes(i));
-    
-    if (unseenIndices.length === 0) {
-      // All gems have been seen, reset
-      setSeenGems([]);
-      nextIndex = 0;
-    } else {
-      nextIndex = unseenIndices[Math.floor(Math.random() * unseenIndices.length)];
-    }
-    
-    setCurrentGemIndex(nextIndex);
+    // Compute the new "seen" set and the next index together, inside the
+    // functional updater, so both are based on the same up-to-date value —
+    // reading the `seenGems` variable directly here would still be the
+    // value from this render, one click behind, which is what let the
+    // counter overshoot the total instead of cycling cleanly.
+    setSeenGems(prevSeen => {
+      const newSeen = [...prevSeen, currentGemIndex];
+      const unseenIndices = gems.map((_, index) => index).filter(i => !newSeen.includes(i));
+
+      if (unseenIndices.length === 0) {
+        // All gems have been seen — start a fresh cycle.
+        setCurrentGemIndex(Math.floor(Math.random() * gems.length));
+        return [];
+      }
+
+      setCurrentGemIndex(unseenIndices[Math.floor(Math.random() * unseenIndices.length)]);
+      return newSeen;
+    });
   };
 
   useEffect(() => {
