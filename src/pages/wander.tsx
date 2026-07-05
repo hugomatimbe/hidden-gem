@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import GemCard from '../components/GemCard';
+import SaveButton from '../components/SaveButton';
 import { Gem } from '../lib/types';
 import { GetStaticProps } from 'next';
+import { getDb } from '../lib/db';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface WanderProps {
@@ -30,11 +32,6 @@ export default function WanderPage({ gems }: WanderProps) {
     }
     
     setCurrentGemIndex(nextIndex);
-  };
-
-  const handleSaveGem = () => {
-    // In a real app, this would save to user's favorites
-    alert(t('wander.save_alert'));
   };
 
   useEffect(() => {
@@ -96,15 +93,10 @@ export default function WanderPage({ gems }: WanderProps) {
             </div>
 
             <div className="flex justify-center space-x-4">
-              <button
-                onClick={handleSaveGem}
-                className="flex items-center gap-2 bg-white dark:bg-ink-800 border-2 border-ink/15 dark:border-sand-100/20 text-ink/80 dark:text-sand-200 px-6 py-3 font-bold -rotate-1 hover:rotate-0 transition-transform"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                {t('wander.save')}
-              </button>
+              <SaveButton
+                gemId={currentGem.id}
+                className="bg-white dark:bg-ink-800 border-2 border-ink/15 dark:border-sand-100/20 px-6 py-3 font-bold -rotate-1 hover:rotate-0 transition-transform"
+              />
 
               <button
                 onClick={handleNextGem}
@@ -124,98 +116,43 @@ export default function WanderPage({ gems }: WanderProps) {
 }
 
 export const getStaticProps: GetStaticProps<WanderProps> = async () => {
-  // Em um app real, isso viria de uma API
-  const gems: Gem[] = [
-    {
-      id: '1',
-      title: 'Café Escondido da Baixa',
-      description: 'Um pequeno café no centro da cidade com o melhor café de Maputo e atmosfera acolhedora.',
-      category: 'comida',
-      tags: ['café', 'centro', 'tradicional'],
-      location: {
-        lat: -25.9692,
-        lng: 32.5732
-      },
-      images: ['/images/cafe.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      title: 'Miradouro da Costa do Sol',
-      description: 'Uma vista espetacular do pôr do sol sobre o Índico, longe das multidões turísticas.',
-      category: 'vista',
-      tags: ['pôr do sol', 'mar', 'fotografia'],
-      location: {
-        lat: -25.9586,
-        lng: 32.5901
-      },
-      images: ['/images/miradouro.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '3',
-      title: 'Galeria de Arte Independente',
-      description: 'Espaço expositivo com obras de artistas moçambicanos emergentes em um edifício restaurado.',
-      category: 'arte',
-      tags: ['arte', 'cultura', 'exposição'],
-      location: {
-        lat: -25.9665,
-        lng: 32.5804
-      },
-      images: ['/images/galeria.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '4',
-      title: 'Trilha da Ponta d\'Ouro',
-      description: 'Trilha não sinalizada que leva a uma praia deserta com águas cristalinas. Requer caminhada de 30 minutos pela vegetação nativa.',
-      category: 'natureza',
-      tags: ['praia', 'trilha', 'caminhada'],
-      location: {
-        lat: -26.8425,
-        lng: 32.8902
-      },
-      images: ['/images/trilha.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '5',
-      title: 'Restaurante da Mãe Zezé',
-      description: 'Restaurante familiar no bairro da Polana com pratos tradicionais moçambicanos. O matapa é incomparável!',
-      category: 'comida',
-      tags: ['restaurante', 'tradicional', 'matapa'],
-      location: {
-        lat: -25.9805,
-        lng: 32.5981
-      },
-      images: ['/images/restaurante.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: '6',
-      title: 'Mural da Rua da Liga',
-      description: 'Impressionante mural de arte urbana que retrata a história de Maputo. Obra coletiva de artistas locais.',
-      category: 'arte',
-      tags: ['mural', 'arte urbana', 'história'],
-      location: {
-        lat: -25.9702,
-        lng: 32.5834
-      },
-      images: ['/images/mural.jpg'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-  ];
+  try {
+    // Wander picks a random real gem — only approved ones are public, same
+    // filter as the main explore page.
+    const db = getDb();
+    const rows = db.prepare("SELECT * FROM gems WHERE status = 'approved'").all();
 
-  return {
-    props: {
-      gems
-    },
-    revalidate: 60 * 30, // 30 minutes
-  };
+    const gems: Gem[] = rows.map((row: any) => {
+      const { lat, lng, address, ...rest } = row;
+      return {
+        ...rest,
+        location: {
+          lat: Number(lat),
+          lng: Number(lng),
+          address: address || null,
+        },
+        tags: JSON.parse(row.tags),
+        images: row.images ? JSON.parse(row.images) : [],
+        isAnonymous: !!row.isAnonymous,
+        wheelchairAccessible: !!row.wheelchairAccessible,
+        familyFriendly: !!row.familyFriendly,
+        petFriendly: !!row.petFriendly,
+      };
+    });
+
+    return {
+      props: {
+        gems,
+      },
+      revalidate: 60, // matches the explore page's cache window
+    };
+  } catch (error) {
+    console.error('Error fetching gems for wander mode:', error);
+    return {
+      props: {
+        gems: [],
+      },
+      revalidate: 60,
+    };
+  }
 };
