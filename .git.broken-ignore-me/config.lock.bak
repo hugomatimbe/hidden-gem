@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+[user]
+	name = Marky12
+	email = hugo.matimbe45@gmail.com

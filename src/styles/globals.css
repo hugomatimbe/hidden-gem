@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #C1502E;
+  --secondary: #3F5A3F;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #FDFBF7;
+  color: #3B2A1E;
+}
+
+/* MapLibre's internal canvas/controls could otherwise stack above our sticky
+   site header — isolate creates a fresh stacking context so nothing inside
+   the map can escape it. */
+.maplibregl-map {
+  z-index: 0;
+  isolation: isolate;
+  font-family: inherit;
+}
+
+.dark body {
+  background-color: #201812;
+  color: #F0E1C8;
+}
+
+/* Postcard/polaroid look: a soft drop shadow like a card lying on a table.
+   Tilt is set per-card via inline rotate utilities in GemCard and
+   straightens out on hover via Tailwind's hover:rotate-0. */
+.polaroid {
+  box-shadow: 0 3px 10px rgba(59, 42, 30, 0.16);
+}
+
+.dark .polaroid {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.polaroid:hover {
+  box-shadow: 0 10px 20px rgba(59, 42, 30, 0.22);
+}
+
+.dark .polaroid:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.map-container {
+  height: calc(100vh - 80px);
+}
+
+@media (max-width: 768px) {
+  .map-container {
+    height: 50vh;
+  }
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
