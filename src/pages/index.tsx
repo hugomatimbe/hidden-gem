@@ -89,7 +89,13 @@ export default function Home({ featuredGems }: HomeProps) {
 
         <div className="container mx-auto px-4 text-center relative">
           <div className="inline-block polaroid bg-white dark:bg-ink-800 p-3 pb-6 -rotate-2 mb-10">
-            <div className="relative w-64 sm:w-80 h-40 sm:h-[200px] bg-primary-100 dark:bg-ink-700 overflow-hidden">
+            {/* Fixed width (w-64) made the card feel small and adrift on
+                narrow phones, with a lot of unused space around it that
+                doesn't show up on wider screens. Scaling with the viewport
+                (capped at the old desktop size) fixes that, and aspect-[8/5]
+                keeps the same crop at every width so the pin stays over
+                open water instead of drifting onto the boat. */}
+            <div className="relative w-[min(80vw,20rem)] sm:w-80 aspect-[8/5] bg-primary-100 dark:bg-ink-700 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1650876095496-e01d50a6c874?w=800&q=80&fm=jpg&fit=crop&auto=format"
