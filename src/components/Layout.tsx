@@ -72,6 +72,12 @@ export default function Layout({
     <>
       <Head>
         <title>{title}</title>
+        {/* Without this, mobile browsers have no consistent rule for how
+            wide to treat the page — some shrink a desktop-width render to
+            fit (masking the problem), others render it unscaled, leaving
+            the actual (narrower) content sitting at the left with dead
+            space to the right of it. This tag is what's missing there. */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content={description} />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href={resolvedUrl} />
