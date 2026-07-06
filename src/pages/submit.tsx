@@ -148,20 +148,11 @@ export default function SubmitPage() {
             </div>
           ) : (
             <div className="polaroid bg-white dark:bg-ink-800 p-6 md:p-8 rotate-1">
-              {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-red-800">{submitError}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* submitError is now shown inside <Form> itself (see
+                  Form.tsx), which also scrolls it into view — this used to
+                  render a second copy of the same message up here, which on
+                  a long form sat off-screen above wherever someone had
+                  scrolled to reach the Submit button. */}
 
               <div className="mb-8 pb-8 border-b border-dashed border-sand-300 dark:border-ink-700">
                 <h3 className="text-lg font-display font-semibold mb-4 text-ink dark:text-sand-50">{t('submit.guidelines_title')}</h3>

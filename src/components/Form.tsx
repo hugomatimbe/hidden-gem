@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import ImageUpload from './ImageUpload';
 import { z } from 'zod';
@@ -166,6 +166,18 @@ export default function Form({ onSubmit, initialValues = {}, isSubmitting = fals
   const [images, setImages] = useState<string[]>(initialValues.images || []);
   const [menuImages, setMenuImages] = useState<string[]>(initialValues.menuImages || []);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // On a long form, a rejection (duplicate gem, validation, etc.) can land
+  // while the person is scrolled down near the Submit button, far below
+  // where the error banner renders — without this it just looks like
+  // clicking Submit did nothing.
+  const errorBannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (submitError || errors.general) {
+      errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitError, errors.general]);
 
   // Day-group hours editor: each group is a set of days that share one
   // start/end time (e.g. "Mon-Thu" at 09:00-17:00, "Fri-Sat" at 09:00-22:00,
@@ -434,20 +446,44 @@ export default function Form({ onSubmit, initialValues = {}, isSubmitting = fals
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {errors.general && (
-        <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-800 dark:text-red-400">{errors.general}</p>
+      {/* Server-side rejections (e.g. the duplicate-gem check in
+          /api/gems.ts) were being caught and stored in `submitError` by the
+          submit/edit pages, but this component never actually rendered
+          them — so someone submitting a duplicate just saw the button stop
+          loading with no explanation at all. The ref lets the effect above
+          scroll this into view, since on a long form it can land well
+          above whatever's currently on screen. */}
+      <div ref={errorBannerRef}>
+        {submitError && (
+          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800 dark:text-red-400">{submitError}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {errors.general && (
+          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800 dark:text-red-400">{errors.general}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Section 1: The basics */}
       <div className="flex items-center gap-3">

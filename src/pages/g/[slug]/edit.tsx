@@ -119,11 +119,8 @@ export default function EditGemPage({ gem }: EditGemProps) {
         <h1 className="text-3xl font-display font-semibold mb-8 text-ink dark:text-sand-50">{t('edit_gem.title')}</h1>
 
         <div className="polaroid bg-white dark:bg-ink-800 p-6 md:p-8 rotate-1">
-          {submitError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-red-800">{submitError}</p>
-            </div>
-          )}
+          {/* submitError is now shown inside <Form> itself, which also
+              scrolls it into view — see the note in Form.tsx. */}
           <Form
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
