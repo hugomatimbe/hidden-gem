@@ -336,9 +336,10 @@ const ptTranslations = {
 
   // Voting
   'voting.title': 'Avalie este lugar',
-  'voting.useful': 'Útil',
-  'voting.not_useful': 'Não Útil',
-  'voting.percentage_suffix': 'dos visitantes acharam este lugar útil',
+  'voting.useful': 'Gostei',
+  'voting.not_useful': 'Não Gostei',
+  'voting.percentage_suffix': 'dos visitantes gostaram deste lugar',
+  'voting.own_gem': 'Não pode avaliar um lugar que você mesmo submeteu.',
 
   // Comments
   'comments.title': 'Comentários',
@@ -899,9 +900,10 @@ const enTranslations = {
 
   // Voting
   'voting.title': 'Rate this place',
-  'voting.useful': 'Helpful',
-  'voting.not_useful': 'Not helpful',
-  'voting.percentage_suffix': 'of visitors found this place helpful',
+  'voting.useful': 'Like',
+  'voting.not_useful': 'Dislike',
+  'voting.percentage_suffix': 'of visitors liked this place',
+  'voting.own_gem': "You can't rate a place you submitted yourself.",
 
   // Comments
   'comments.title': 'Comments',

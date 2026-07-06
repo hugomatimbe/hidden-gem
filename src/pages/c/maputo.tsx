@@ -111,9 +111,15 @@ export default function MaputoPage({ gems: initialGems }: MaputoProps) {
     switch (filters.sort) {
       case 'newest':
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case 'topRated':
-        // For now, sort by number of tags as a proxy for popularity
-        return b.tags.length - a.tags.length;
+      case 'topRated': {
+        // Best net score (upvotes minus downvotes) first — places with no
+        // votes yet sort after any place with a positive score, falling
+        // back to recency among ties.
+        const netA = a.netVotes ?? 0;
+        const netB = b.netVotes ?? 0;
+        if (netB !== netA) return netB - netA;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
       case 'closest':
         // Sort by distance from center of Maputo (approximate)
         const center = { lat: -25.9655, lng: 32.6086 };
@@ -125,9 +131,18 @@ export default function MaputoPage({ gems: initialGems }: MaputoProps) {
         );
         return distanceA - distanceB;
       case 'trending':
-      default:
-        // Sort by most recently updated first
+      default: {
+        // "Popular" — most total engagement (votes cast, regardless of
+        // direction) first, then net score, then recency as a final
+        // tiebreaker so places with no votes at all still sort sensibly.
+        const totalA = a.totalVotes ?? 0;
+        const totalB = b.totalVotes ?? 0;
+        if (totalB !== totalA) return totalB - totalA;
+        const netA = a.netVotes ?? 0;
+        const netB = b.netVotes ?? 0;
+        if (netB !== netA) return netB - netA;
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
     }
   });
 
@@ -140,7 +155,7 @@ export default function MaputoPage({ gems: initialGems }: MaputoProps) {
               <h1 className="text-2xl font-display font-semibold text-ink dark:text-sand-50">{t('maputo.title')}</h1>
               <p className="text-ink/70 dark:text-sand-300">{gems.length} {t('maputo.secret_places')}</p>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={filters.category}
@@ -246,11 +261,24 @@ export async function getStaticProps() {
     // Read gems directly from database — only approved ones are public.
     const db = getDb();
 
-    const rows = db.prepare("SELECT * FROM gems WHERE status = 'approved'").all();
+    // Same LEFT JOIN votes pattern as index.tsx's featured-gems query, so
+    // the Popular/Top Rated sorts below have real data to work with instead
+    // of the old placeholders (recency and tag-count).
+    const rows = db
+      .prepare(
+        `SELECT gems.*,
+          COALESCE(SUM(CASE WHEN votes.type = 'up' THEN 1 WHEN votes.type = 'down' THEN -1 ELSE 0 END), 0) as netVotes,
+          COUNT(votes.id) as totalVotes
+        FROM gems
+        LEFT JOIN votes ON votes.gemId = gems.id
+        WHERE gems.status = 'approved'
+        GROUP BY gems.id`
+      )
+      .all();
 
     // Parse JSON fields and booleans
     const gems = rows.map((row: any) => {
-      const { lat, lng, address, ...rest } = row;
+      const { lat, lng, address, netVotes, totalVotes, ...rest } = row;
       return {
         ...rest,
         location: {
@@ -266,6 +294,8 @@ export async function getStaticProps() {
         petFriendly: !!row.petFriendly,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
+        netVotes: Number(netVotes),
+        totalVotes: Number(totalVotes),
       };
     });
 

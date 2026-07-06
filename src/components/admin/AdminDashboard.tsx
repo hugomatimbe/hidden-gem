@@ -49,12 +49,13 @@ export default function AdminDashboard({ onViewPending, onViewReports }: AdminDa
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-5">
         <StatCard label={t('admin.stat_total_gems')} value={stats.gems.total} rotate="rotate-1" />
         <StatCard label={t('admin.stat_pending')} value={stats.gems.pending} rotate="-rotate-1" />
         <StatCard label={t('admin.stat_open_reports')} value={stats.openReports} rotate="rotate-2" />
         <StatCard label={t('admin.stat_total_users')} value={stats.totalUsers} rotate="-rotate-2" />
         <StatCard label={t('admin.stat_total_comments')} value={stats.totalComments} rotate="rotate-1" />
+        <StatCard label={t('admin.stat_total_votes')} value={stats.totalVotes} rotate="-rotate-1" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

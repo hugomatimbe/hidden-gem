@@ -258,7 +258,7 @@ export default function GemDetail({ gem, relatedGems, initialUpvotes, initialDow
               </div>
 
               {/* Voting */}
-              <Voting gemId={gem.id} initialUpvotes={initialUpvotes} initialDownvotes={initialDownvotes} />
+              <Voting gemId={gem.id} submittedBy={gem.submittedBy} initialUpvotes={initialUpvotes} initialDownvotes={initialDownvotes} />
 
               {/* Visitor Photos */}
               <div className="mb-8">

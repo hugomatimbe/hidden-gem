@@ -51,10 +51,23 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     // Public listing only ever shows approved gems. Pending/rejected gems
     // are only visible through /api/admin/gems (admin-only).
-    const rows = db.prepare("SELECT * FROM gems WHERE status = 'approved'").all();
+    // Same vote aggregate as maputo.tsx's getStaticProps — this endpoint is
+    // that page's client-side fallback fetch, so it needs the same fields
+    // for the Popular/Top Rated sorts to work when reached this way.
+    const rows = db
+      .prepare(
+        `SELECT gems.*,
+          COALESCE(SUM(CASE WHEN votes.type = 'up' THEN 1 WHEN votes.type = 'down' THEN -1 ELSE 0 END), 0) as netVotes,
+          COUNT(votes.id) as totalVotes
+        FROM gems
+        LEFT JOIN votes ON votes.gemId = gems.id
+        WHERE gems.status = 'approved'
+        GROUP BY gems.id`
+      )
+      .all();
     // Parse JSON fields and booleans
     const gems = rows.map((row: any) => {
-      const { lat, lng, address, ...rest } = row;
+      const { lat, lng, address, netVotes, totalVotes, ...rest } = row;
       return {
         ...rest,
         location: {
@@ -71,6 +84,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         petFriendly: !!row.petFriendly,
         createdAt: new Date(row.createdAt),
         updatedAt: new Date(row.updatedAt),
+        netVotes: Number(netVotes),
+        totalVotes: Number(totalVotes),
       };
     });
     res.status(200).json(gems);

@@ -97,9 +97,25 @@ export default function GemCard({ gem, showDistance = false, userLocation }: Gem
               ))}
             </div>
 
-            {showDistance && distance && (
-              <span className="text-xs text-ink/50 dark:text-sand-300/70">{distance}</span>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Only pages whose query joins the votes table populate
+                  totalVotes — elsewhere it's undefined and this stays
+                  hidden rather than showing a misleading "0". */}
+              {typeof gem.totalVotes === 'number' && gem.totalVotes > 0 && (
+                <span
+                  className="flex items-center gap-0.5 text-xs font-medium text-ink/60 dark:text-sand-300/80"
+                  title={t('voting.title')}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905a3.61 3.61 0 01-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                  </svg>
+                  {gem.netVotes}
+                </span>
+              )}
+              {showDistance && distance && (
+                <span className="text-xs text-ink/50 dark:text-sand-300/70">{distance}</span>
+              )}
+            </div>
           </div>
         </div>
       </a>

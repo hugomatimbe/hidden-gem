@@ -42,6 +42,11 @@ export interface Gem {
   specialDishes?: string[];
   atmosphere?: string;
   cuisine?: string;
+  // Vote tally — only present on pages whose query joins the votes table
+  // (maputo listing, homepage featured gems, gem detail). Optional so
+  // GemCard can render gracefully on pages that don't fetch vote data.
+  netVotes?: number;
+  totalVotes?: number;
 }
 
 export interface City {

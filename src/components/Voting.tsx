@@ -1,31 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface VotingProps {
   gemId: string;
+  submittedBy?: string | null;
   initialUpvotes?: number;
   initialDownvotes?: number;
 }
 
-function getVoterId(): string {
-  if (typeof window === 'undefined') return '';
-  const key = 'hiddenGemVoterId';
-  let voterId = window.localStorage.getItem(key);
-  if (!voterId) {
-    voterId =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `voter-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    window.localStorage.setItem(key, voterId);
-  }
-  return voterId;
-}
-
-const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps) => {
+const Voting = ({ gemId, submittedBy, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const router = useRouter();
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
+  const [voteError, setVoteError] = useState('');
+
+  const isOwnGem = !!user && !!submittedBy && user.id === submittedBy;
 
   // Garantir que o estado seja o mesmo no cliente e no servidor
   useEffect(() => {
@@ -33,12 +27,14 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
     setDownvotes(initialDownvotes);
   }, [initialUpvotes, initialDownvotes]);
 
-  // Carregar contagem real e o voto deste visitante a partir da API
+  // Carregar contagem real e o voto deste visitante (se estiver logado) a
+  // partir da API — quem votou agora vem da sessão, não de um id gerado no
+  // cliente, então não visitantes anónimos não têm mais "o seu voto" a
+  // carregar aqui.
   useEffect(() => {
     if (!gemId) return;
-    const voterId = getVoterId();
 
-    fetch(`/api/gems/${gemId}/votes?voterId=${encodeURIComponent(voterId)}`)
+    fetch(`/api/gems/${gemId}/votes`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) return;
@@ -53,18 +49,20 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
 
   const castVote = useCallback(
     async (type: 'up' | 'down' | 'undo') => {
-      const voterId = getVoterId();
       try {
         const res = await fetch(`/api/gems/${gemId}/votes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voterId, type }),
+          body: JSON.stringify({ type }),
         });
+        const data = await res.json();
         if (res.ok) {
-          const data = await res.json();
           setUpvotes(data.upvotes);
           setDownvotes(data.downvotes);
           setUserVote(data.userVote);
+          setVoteError('');
+        } else {
+          setVoteError(data.error || '');
         }
       } catch (error) {
         console.error('Error voting:', error);
@@ -74,6 +72,12 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
   );
 
   const handleVote = (type: 'up' | 'down') => {
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(router.asPath)}`);
+      return;
+    }
+    if (isOwnGem) return;
+
     const nextVote: 'up' | 'down' | 'undo' = userVote === type ? 'undo' : type;
 
     // Atualização otimista; a resposta da API confirma os valores reais
@@ -103,7 +107,8 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
       <div className="flex justify-center gap-4 mb-4">
         <button
           onClick={() => handleVote('up')}
-          className={`flex flex-col items-center p-3 border-2 transition-transform rotate-1 hover:rotate-0 ${
+          disabled={isOwnGem}
+          className={`flex flex-col items-center p-3 border-2 transition-transform rotate-1 hover:rotate-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:rotate-1 ${
             userVote === 'up'
               ? 'bg-secondary text-white border-secondary shadow-[3px_3px_0_rgba(59,42,30,0.18)]'
               : 'border-ink/15 dark:border-sand-100/20 text-ink/70 dark:text-sand-300 hover:border-secondary'
@@ -117,7 +122,8 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
 
         <button
           onClick={() => handleVote('down')}
-          className={`flex flex-col items-center p-3 border-2 transition-transform -rotate-1 hover:rotate-0 ${
+          disabled={isOwnGem}
+          className={`flex flex-col items-center p-3 border-2 transition-transform -rotate-1 hover:rotate-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:-rotate-1 ${
             userVote === 'down'
               ? 'bg-primary text-white border-primary shadow-[3px_3px_0_rgba(59,42,30,0.18)]'
               : 'border-ink/15 dark:border-sand-100/20 text-ink/70 dark:text-sand-300 hover:border-primary'
@@ -138,6 +144,16 @@ const Voting = ({ gemId, initialUpvotes = 0, initialDownvotes = 0 }: VotingProps
       <p className="text-center text-sm text-ink/60 dark:text-sand-300 mt-2">
         {upvotePercentage}% {t('voting.percentage_suffix')}
       </p>
+      {isOwnGem && (
+        <p className="text-center text-sm text-ink/50 dark:text-sand-300/70 mt-3 italic">
+          {t('voting.own_gem')}
+        </p>
+      )}
+      {!isOwnGem && voteError && (
+        <p className="text-center text-sm text-primary dark:text-primary-300 mt-3">
+          {voteError}
+        </p>
+      )}
     </div>
   );
 };

@@ -387,7 +387,8 @@ export const getStaticProps: GetStaticProps<HomeProps> = async () => {
     const rows = db
       .prepare(
         `SELECT gems.*,
-          COALESCE(SUM(CASE WHEN votes.type = 'up' THEN 1 WHEN votes.type = 'down' THEN -1 ELSE 0 END), 0) as netVotes
+          COALESCE(SUM(CASE WHEN votes.type = 'up' THEN 1 WHEN votes.type = 'down' THEN -1 ELSE 0 END), 0) as netVotes,
+          COUNT(votes.id) as totalVotes
         FROM gems
         LEFT JOIN votes ON votes.gemId = gems.id
         WHERE gems.status = 'approved'
@@ -398,7 +399,7 @@ export const getStaticProps: GetStaticProps<HomeProps> = async () => {
       .all(FEATURED_LIMIT) as any[];
 
     const featuredGems: Gem[] = rows.map((row) => {
-      const { lat, lng, address, netVotes, ...rest } = row;
+      const { lat, lng, address, netVotes, totalVotes, ...rest } = row;
       return {
         ...rest,
         location: {
@@ -409,6 +410,10 @@ export const getStaticProps: GetStaticProps<HomeProps> = async () => {
         tags: JSON.parse(row.tags),
         images: row.images ? JSON.parse(row.images) : [],
         isAnonymous: !!row.isAnonymous,
+        // Kept (not stripped, unlike before) so GemCard can show the vote
+        // score on the homepage's featured gems, same as the browse page.
+        netVotes: Number(netVotes),
+        totalVotes: Number(totalVotes),
       };
     });
 
