@@ -100,11 +100,17 @@ export default function Layout({
         <header className="bg-white dark:bg-ink-800 shadow-sm sticky top-0 z-10 border-b border-sand-200 dark:border-ink-700">
           <div className="container mx-auto px-4 py-3 flex justify-between items-center">
             <Link href="/">
-              <a className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary flex items-center justify-center -rotate-6 shadow-[2px_2px_0_rgba(59,42,30,0.25)]">
+              <a className="flex items-center space-x-2 shrink-0">
+                <div className="w-8 h-8 bg-primary flex items-center justify-center -rotate-6 shadow-[2px_2px_0_rgba(59,42,30,0.25)] shrink-0">
                   <span className="text-white font-display font-bold text-lg">H</span>
                 </div>
-                <span className="font-display font-semibold text-xl text-ink dark:text-sand-50">Hidden Gem</span>
+                {/* whitespace-nowrap: with the viewport tag now reporting the
+                    real (narrow) screen width, the header row is tight
+                    enough on phones that this text was the first thing to
+                    wrap onto its own line — locking it to one line and
+                    trimming the header's other mobile-only controls (below)
+                    is what actually buys back the room it needs. */}
+                <span className="font-display font-semibold text-xl text-ink dark:text-sand-50 whitespace-nowrap">Hidden Gem</span>
               </a>
             </Link>
 
@@ -128,13 +134,18 @@ export default function Layout({
               )}
             </nav>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <SearchBox className="hidden sm:block w-40 lg:w-56" />
 
+              {/* Hidden below md and moved into the mobile menu panel
+                  instead — with search and nav links already gone from this
+                  row on small screens, these two were what pushed the
+                  header past the point where "Hidden Gem" still fit on one
+                  line. */}
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as 'pt' | 'en')}
-                className="bg-transparent border border-sand-300 dark:border-ink-700 rounded px-2 py-1 text-sm dark:bg-ink-700 dark:text-sand-50"
+                className="hidden md:block bg-transparent border border-sand-300 dark:border-ink-700 rounded px-2 py-1 text-sm dark:bg-ink-700 dark:text-sand-50"
               >
                 <option value="pt">PT</option>
                 <option value="en">EN</option>
@@ -143,7 +154,7 @@ export default function Layout({
               {/* Theme Toggle Button */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-sand-100 dark:bg-ink-700 hover:bg-sand-200 dark:hover:bg-ink-700/70 transition-colors"
+                className="hidden md:block p-2 rounded-lg bg-sand-100 dark:bg-ink-700 hover:bg-sand-200 dark:hover:bg-ink-700/70 transition-colors"
                 aria-label="Toggle theme"
               >
                 {theme === 'light' ? (
@@ -223,6 +234,35 @@ export default function Layout({
 
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-sand-200 dark:border-ink-700 px-4 py-4 space-y-4">
+              {/* Language + theme controls live only here on mobile now —
+                  see the note by their (hidden) counterparts above. */}
+              <div className="flex items-center gap-3">
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as 'pt' | 'en')}
+                  className="bg-transparent border border-sand-300 dark:border-ink-700 rounded px-2 py-1 text-sm dark:bg-ink-700 dark:text-sand-50"
+                >
+                  <option value="pt">PT</option>
+                  <option value="en">EN</option>
+                </select>
+
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-lg bg-sand-100 dark:bg-ink-700 hover:bg-sand-200 dark:hover:bg-ink-700/70 transition-colors"
+                  aria-label="Toggle theme"
+                >
+                  {theme === 'light' ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
               <SearchBox className="block sm:hidden" />
 
               <nav className="flex flex-col space-y-3">
